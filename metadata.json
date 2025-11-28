@@ -1,0 +1,4 @@
+{
+  "name": "RetroBio",
+  "description": "Converts profile images and text into a retro CRT monitor style SVG using Gemini for text formatting and canvas processing for image dithering."
+}
