@@ -5,7 +5,9 @@ RetroBio is a application that generates retro-style terminal profile cards. It 
 
 ![Funny cat](./retro_bio.gif)
 
+## Service
 
+Try it out at [retro.bio](https://bio.watanabesmall.workers.dev/)
 ## Getting Started
 
 ### Prerequisites
