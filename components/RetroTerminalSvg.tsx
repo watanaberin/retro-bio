@@ -52,6 +52,13 @@ export const RetroTerminalSvg: React.FC<RetroTerminalSvgProps> = ({
     textContentHeight + padding
   );
 
+  // FORCE SQUARE ASPECT RATIO
+  const squareSize = Math.max(totalWidth, totalHeight);
+
+  // Centering Offsets
+  const offsetX = (squareSize - totalWidth) / 2;
+  const offsetY = (squareSize - totalHeight) / 2;
+
   // Constants for colors
   const PHOSPHOR_COLOR = "#33ff00"; // Classic Terminal Green
   const PHOSPHOR_DIM = "#1a8000";
@@ -85,23 +92,24 @@ export const RetroTerminalSvg: React.FC<RetroTerminalSvgProps> = ({
   // Decoration
   const paletteRects = useMemo(() => {
     const colors = ["#ff3333", "#ffff33", "#33ff33", "#33ffff", "#3333ff", "#ff33ff"];
-    const yPos = totalHeight - 40;
+    // Position at bottom of the SQUARE container
+    const yPos = squareSize - 40;
     return colors.map((c, i) => (
       <g key={c}>
         <rect x={textStartX + (i * 35)} y={yPos} width={35} height={15} fill={c} opacity={0.8} filter="url(#glow)" />
       </g>
     ));
-  }, [textStartX, totalHeight]);
+  }, [textStartX, squareSize]);
 
   return (
     <div className="w-full h-full flex items-center justify-center">
       <svg
         id={id}
-        viewBox={`0 0 ${totalWidth} ${totalHeight}`}
+        viewBox={`0 0 ${squareSize} ${squareSize}`}
         xmlns="http://www.w3.org/2000/svg"
         xmlnsXlink="http://www.w3.org/1999/xlink"
         className="max-w-full max-h-full block"
-        style={{ backgroundColor: "#0a0a0a", fontFamily: "'VT323', monospace" }}
+        style={{ backgroundColor: "#0a0a0a", fontFamily: "'VT323', monospace", aspectRatio: "1/1" }}
       >
         <defs>
           {/* 1. Heavy Bloom Glow - Increased for visual impact */}
@@ -127,6 +135,11 @@ export const RetroTerminalSvg: React.FC<RetroTerminalSvgProps> = ({
           <pattern id="scanlines" patternUnits="userSpaceOnUse" width="1" height="4">
             <rect x="0" y="0" width="1" height="2" fill="black" opacity="0.6" />
             <rect x="0" y="2" width="1" height="2" fill="transparent" opacity="0" />
+          </pattern>
+
+          {/* 3b. Background Grid Pattern */}
+          <pattern id="bg-grid" patternUnits="userSpaceOnUse" width="40" height="40">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#33ff00" strokeWidth="0.5" opacity="0.15" />
           </pattern>
 
           {/* 4. Monitor Green Tint + Luminance Map */}
@@ -167,11 +180,14 @@ export const RetroTerminalSvg: React.FC<RetroTerminalSvgProps> = ({
         {/* Background Dark Phosphor */}
         <rect width="100%" height="100%" fill="#020802" />
 
+        {/* Background Grid Pattern */}
+        <rect width="100%" height="100%" fill="url(#bg-grid)" />
+
         {/* Analog Noise Background */}
         <rect width="100%" height="100%" filter="url(#noise)" opacity="0.4" />
 
-        {/* Main Content Group - Removed global glow for clarity, added adjustable blur */}
-        <g filter="url(#global-blur)">
+        {/* Main Content Group - Centered */}
+        <g filter="url(#global-blur)" transform={`translate(${offsetX}, ${offsetY})`}>
 
           {/* Image Section - Optional: Add glow here if desired, or keep clean */}
           {imageSrc && (
@@ -217,11 +233,15 @@ export const RetroTerminalSvg: React.FC<RetroTerminalSvgProps> = ({
           {/* Bio Section */}
           {bioLines}
 
+        </g>
+
+        {/* Bottom Decoration (Fixed to Container Bottom) */}
+        <g filter="url(#global-blur)">
           {/* Decoration */}
           {paletteRects}
 
           {/* Command Prompt */}
-          <text x={padding} y={totalHeight - 15} fill={PHOSPHOR_COLOR} fontSize={fontSize} textRendering="optimizeSpeed">
+          <text x={padding} y={squareSize - 15} fill={PHOSPHOR_COLOR} fontSize={fontSize} textRendering="optimizeSpeed">
             <tspan opacity="0.7">root@system:</tspan> ~ $ <tspan className="animate-pulse" fontWeight="bold">_</tspan>
           </text>
         </g>
@@ -235,7 +255,7 @@ export const RetroTerminalSvg: React.FC<RetroTerminalSvgProps> = ({
         <rect width="100%" height="100%" fill="url(#vignette)" pointerEvents="none" />
 
         {/* CRT Bezel Inner Glow (simulated with stroke) */}
-        <rect x="2" y="2" width={totalWidth - 4} height={totalHeight - 4} fill="none" stroke={PHOSPHOR_COLOR} strokeWidth="4" opacity="0.1" rx="10" />
+        <rect x="2" y="2" width={squareSize - 4} height={squareSize - 4} fill="none" stroke={PHOSPHOR_COLOR} strokeWidth="4" opacity="0.1" rx="10" />
 
       </svg>
     </div>
