@@ -12,7 +12,7 @@ const App: React.FC = () => {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'list' | 'bio'>('list');
   const [isGeneratingGif, setIsGeneratingGif] = useState(false);
-  const [blurLevel, setBlurLevel] = useState(2); // Default blur level
+  const [blurLevel, setBlurLevel] = useState(1); // Default blur level
 
   // Handlers
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -217,7 +217,7 @@ const App: React.FC = () => {
                 <input
                   type="range"
                   min="0"
-                  max="5"
+                  max="2"
                   step="0.1"
                   value={blurLevel}
                   onChange={(e) => setBlurLevel(parseFloat(e.target.value))}
