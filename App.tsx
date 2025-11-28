@@ -12,17 +12,21 @@ const App: React.FC = () => {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'list' | 'bio'>('list');
   const [isGeneratingGif, setIsGeneratingGif] = useState(false);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [blurLevel, setBlurLevel] = useState(1); // Default blur level
 
   // Handlers
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
+      setIsProcessingImage(true);
       try {
         const base64 = await processImage(e.target.files[0]);
         setImageSrc(base64);
       } catch (err) {
         console.error(err);
-        alert("Failed to process image.");
+        alert(`Failed to process image: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      } finally {
+        setIsProcessingImage(false);
       }
     }
   };
@@ -100,12 +104,18 @@ const App: React.FC = () => {
             <div className="relative cursor-pointer border-2 border-dashed border-[#33ff00]/40 hover:border-[#33ff00] hover:bg-[#33ff00]/5 transition-all p-8 text-center rounded bg-black/40">
               <input
                 type="file"
-                accept="image/*"
+                accept="image/*,.heic,.heif"
                 onChange={handleImageUpload}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
               />
               <div className="flex flex-col items-center justify-center pointer-events-none">
-                {imageSrc ? (
+                {isProcessingImage ? (
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 border-2 border-[#33ff00] border-t-transparent rounded-full animate-spin mb-2"></div>
+                    <span className="text-white font-bold mb-1">PROCESSING...</span>
+                    <span className="text-xs text-[#33ff00]/70">Converting Image Format</span>
+                  </div>
+                ) : imageSrc ? (
                   <div className="flex flex-col items-center">
                     <span className="text-white font-bold mb-1">DATA_LOADED</span>
                     <span className="text-xs text-[#33ff00]/70">Sector 7G Image Buffer Active</span>
@@ -114,6 +124,7 @@ const App: React.FC = () => {
                   <>
                     <Upload className="w-8 h-8 mb-3 opacity-70" />
                     <span className="text-sm font-bold">DRAG OR SELECT FILE</span>
+                    <span className="text-xs text-[#33ff00]/50 mt-1">Supports HEIC, PNG, JPG, WebP</span>
                   </>
                 )}
               </div>

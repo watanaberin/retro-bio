@@ -123,20 +123,26 @@ export const generateGif = async (svgId: string, filename: string): Promise<void
         ctx.fillStyle = '#0a0a0a';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // Apply CRT blur effect to match web preview
+        ctx.filter = 'blur(0.3px) contrast(1.05)';
+
         // -- Jitter Effect --
         const jitterX = (Math.random() > 0.8) ? (Math.random() - 0.5) * 2 : 0;
 
-        // Draw Base Image
+        // Draw Base Image with blur
         ctx.drawImage(img, jitterX, 0, width, height);
 
-        // -- Scanline Beam --
+        // Reset filter for overlay effects
+        ctx.filter = 'none';
+
+        // -- Scanline Beam (matches web CSS animation) --
         const progress = (i / totalFrames);
         const scanY = progress * height;
-        const beamHeight = height * 0.15;
+        const beamHeight = 100; // Fixed 100px to match web
 
         const gradient = ctx.createLinearGradient(0, scanY, 0, scanY + beamHeight);
         gradient.addColorStop(0, 'rgba(51, 255, 0, 0)');
-        gradient.addColorStop(0.5, 'rgba(200, 255, 200, 0.15)');
+        gradient.addColorStop(0.5, 'rgba(51, 255, 0, 0.03)'); // Match web opacity
         gradient.addColorStop(1, 'rgba(51, 255, 0, 0)');
 
         ctx.fillStyle = gradient;
@@ -147,8 +153,12 @@ export const generateGif = async (svgId: string, filename: string): Promise<void
         ctx.fillStyle = `rgba(0, 0, 0, ${1 - flicker})`;
         ctx.fillRect(0, 0, width, height);
 
-        // -- Scanlines Overlay (Static) -- REMOVED to match preview consistency
-        // The SVG already has scanlines, so adding them here creates a double-dark effect.
+        // -- Scanlines Overlay (Static) -- Added to match web preview
+        // Draw horizontal scanlines to match the web CRT effect
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+        for (let y = 0; y < height; y += 4) {
+          ctx.fillRect(0, y, width, 2);
+        }
 
         // Add frame to GIF
         gif.addFrame(ctx, { copy: true, delay: (1000 / fps) });

@@ -170,6 +170,8 @@
         0 0 2rem rgba(51, 255, 0, 0.1);
       background-color: #0a0a0a;
       perspective: 1000px;
+      /* Add subtle blur to simulate CRT phosphor bloom */
+      filter: blur(0.3px) contrast(1.05);
     }
 
     .crt-turn-on {
@@ -182,17 +184,19 @@
       justify-content: center;
     }
 
-    /* Screen flicker animation */
+    /* Screen flicker animation - more visible */
     .crt-flicker {
       animation: flicker 0.15s infinite;
       pointer-events: none;
       position: absolute;
       inset: 0;
-      background: rgba(18, 16, 16, 0.1);
+      background: rgba(18, 16, 16, 0.15);
       z-index: 20;
+      /* Add chromatic aberration effect */
+      mix-blend-mode: multiply;
     }
 
-    /* Rolling scanline (visual only overlay) */
+    /* Rolling scanline (visual only overlay) - enhanced visibility */
     .crt-scanline::before {
       content: " ";
       display: block;
@@ -201,10 +205,41 @@
       left: 0;
       bottom: 0;
       right: 0;
-      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+      background:
+        linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%),
+        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.03));
       z-index: 10;
       background-size: 100% 2px, 3px 100%;
       pointer-events: none;
+      opacity: 0.8;
+    }
+
+    /* Add animated scanline beam */
+    .crt-scanline::after {
+      content: "";
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 100px;
+      background: linear-gradient(to bottom,
+          rgba(51, 255, 0, 0) 0%,
+          rgba(51, 255, 0, 0.03) 50%,
+          rgba(51, 255, 0, 0) 100%);
+      animation: scanline-roll 8s linear infinite;
+      pointer-events: none;
+      z-index: 15;
+    }
+
+    @keyframes scanline-roll {
+      0% {
+        transform: translateY(-100px);
+      }
+
+      100% {
+        transform: translateY(100vh);
+      }
     }
   </style>
   <script type="importmap">
