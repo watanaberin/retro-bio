@@ -6,10 +6,16 @@ declare class GIF {
   render(): void;
 }
 
-export const generateGif = async (svgId: string, filename: string): Promise<void> => {
-  // 1. Fix for CORS "Script Error": Load worker code into a local Blob
-  // Web Workers often fail to load from cross-origin CDNs due to security policies.
-  // We fetch the text content, create a local blob, and use that as the worker source.
+/**
+ * Generate animated GIF from WebGL canvas
+ * Uses shader-based animations only (no additional effects)
+ */
+export const generateWebGLGif = async (
+  canvasId: string,
+  filename: string,
+  captureFrameCallback: (frameIndex: number) => Promise<void>
+): Promise<void> => {
+  // 1. Load GIF.js worker (same CORS fix as before)
   const workerScriptUrl = 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js';
   let localWorkerUrl: string;
 
@@ -24,171 +30,80 @@ export const generateGif = async (svgId: string, filename: string): Promise<void
   }
 
   return new Promise((resolve, reject) => {
-    const svgElement = document.getElementById(svgId);
-    if (!svgElement) {
+    // 2. Get WebGL canvas element
+    const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+    if (!canvas) {
       URL.revokeObjectURL(localWorkerUrl);
-      reject(new Error("SVG element not found"));
+      reject(new Error("Canvas element not found"));
       return;
     }
 
-    // 2. Serialize SVG to String
-    const serializer = new XMLSerializer();
-    let source = serializer.serializeToString(svgElement);
-
-    // FIX 1: Ensure Namespaces exist
-    if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
-      source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-    }
-    if (!source.match(/^<svg[^>]+xmlns:xlink/)) {
-      source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
-    }
-
-    // FIX 2: Ensure Explicit Dimensions (Vital for Image loading)
-    let width = svgElement.clientWidth;
-    let height = svgElement.clientHeight;
-    const viewBox = svgElement.getAttribute('viewBox');
-
-    if (viewBox) {
-      const parts = viewBox.split(' ');
-      if (parts.length === 4) {
-        const vbWidth = parseFloat(parts[2]);
-        const vbHeight = parseFloat(parts[3]);
-        if (!width) width = vbWidth;
-        if (!height) height = vbHeight;
-      }
-    }
-
-    // Inject width/height if missing in the string tag
-    if (!source.match(/<svg[^>]+width="/)) {
-      source = source.replace(/<svg/, `<svg width="${width}" height="${height}"`);
-    }
-
-    // FIX 3: REMOVE External Font Imports to prevent taint/loading errors
-    const fontStyle = `
-      <style>
-        text { 
-          font-family: 'Courier New', 'Courier', monospace; 
-          font-weight: bold; 
-        }
-      </style>
-    `;
-
-    if (source.includes('</defs>')) {
-      source = source.replace('</defs>', `${fontStyle}</defs>`);
-    } else {
-      source = source.replace('>', `>${fontStyle}`);
-    }
-
-    // 3. Create Blob and Image
-    const img = new Image();
-    const svgBlob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(svgBlob);
-
-    img.onload = () => {
-      // 4. Setup Canvas and GIF
-      const canvas = document.createElement("canvas");
-      // Use standard scale
-      const scale = 1;
-
-      canvas.width = width * scale;
-      canvas.height = height * scale;
-      const ctx = canvas.getContext("2d");
-
-      if (!ctx) {
-        URL.revokeObjectURL(url);
-        URL.revokeObjectURL(localWorkerUrl);
-        reject(new Error("Could not get canvas context"));
-        return;
-      }
-
-      // Initialize GIF.js with LOCAL worker URL
-      const gif = new GIF({
-        workers: 2,
-        quality: 10,
-        width: canvas.width,
-        height: canvas.height,
-        workerScript: localWorkerUrl, // <--- Key fix
-        transparent: null,
-        background: '#0a0a0a'
-      });
-
-      // 5. Animation Parameters
-      const fps = 15;
-      const durationSeconds = 2; // Loop duration
-      const totalFrames = fps * durationSeconds;
-
-      // CRT Effect Loop
-      for (let i = 0; i < totalFrames; i++) {
-        // Clear
-        ctx.fillStyle = '#0a0a0a';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Apply CRT blur effect to match web preview
-        ctx.filter = 'blur(0.3px) contrast(1.05)';
-
-        // -- Jitter Effect --
-        const jitterX = (Math.random() > 0.8) ? (Math.random() - 0.5) * 2 : 0;
-
-        // Draw Base Image with blur
-        ctx.drawImage(img, jitterX, 0, width, height);
-
-        // Reset filter for overlay effects
-        ctx.filter = 'none';
-
-        // -- Scanline Beam (matches web CSS animation) --
-        const progress = (i / totalFrames);
-        const scanY = progress * height;
-        const beamHeight = 100; // Fixed 100px to match web
-
-        const gradient = ctx.createLinearGradient(0, scanY, 0, scanY + beamHeight);
-        gradient.addColorStop(0, 'rgba(51, 255, 0, 0)');
-        gradient.addColorStop(0.5, 'rgba(51, 255, 0, 0.03)'); // Match web opacity
-        gradient.addColorStop(1, 'rgba(51, 255, 0, 0)');
-
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, scanY - (beamHeight / 2), width, beamHeight);
-
-        // -- Global Flicker --
-        const flicker = 0.96 + Math.random() * 0.04;
-        ctx.fillStyle = `rgba(0, 0, 0, ${1 - flicker})`;
-        ctx.fillRect(0, 0, width, height);
-
-        // -- Scanlines Overlay (Static) -- Added to match web preview
-        // Draw horizontal scanlines to match the web CRT effect
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
-        for (let y = 0; y < height; y += 4) {
-          ctx.fillRect(0, y, width, 2);
-        }
-
-        // Add frame to GIF
-        gif.addFrame(ctx, { copy: true, delay: (1000 / fps) });
-      }
-
-      // 6. Render
-      gif.on('finished', (blob: Blob) => {
-        const gifUrl = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = gifUrl;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        // Cleanup
-        URL.revokeObjectURL(url);
-        URL.revokeObjectURL(localWorkerUrl);
-        resolve();
-      });
-
-      gif.render();
-    };
-
-    img.onerror = (e) => {
-      URL.revokeObjectURL(url);
+    if (!(canvas instanceof HTMLCanvasElement)) {
       URL.revokeObjectURL(localWorkerUrl);
-      reject(new Error("Failed to load SVG into memory. This is usually caused by external resources (like fonts) which are blocked in this context."));
+      reject(new Error("Element is not a canvas"));
+      return;
+    }
+
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // 3. Initialize GIF.js
+    const gif = new GIF({
+      workers: 2,
+      quality: 10,
+      width,
+      height,
+      workerScript: localWorkerUrl,
+      transparent: null,
+      background: '#0a0a0a'
+    });
+
+    // 4. Animation parameters (match shader-based timing)
+    const fps = 15;
+    const durationSeconds = 2;
+    const totalFrames = fps * durationSeconds;
+
+    // 5. Capture frames sequentially
+    const captureFrames = async () => {
+      try {
+        for (let i = 0; i < totalFrames; i++) {
+          // Tell WebGL component to render frame at specific time
+          await captureFrameCallback(i);
+
+          // Wait for render to complete
+          await new Promise(resolve => requestAnimationFrame(resolve));
+
+          // Capture current canvas state directly
+          // No additional effects - shader handles everything
+          gif.addFrame(canvas, {
+            copy: true,
+            delay: 1000 / fps
+          });
+        }
+
+        // 6. Encode and download
+        gif.on('finished', (blob: Blob) => {
+          const gifUrl = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = gifUrl;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          // Cleanup
+          URL.revokeObjectURL(gifUrl);
+          URL.revokeObjectURL(localWorkerUrl);
+          resolve();
+        });
+
+        gif.render();
+      } catch (error) {
+        URL.revokeObjectURL(localWorkerUrl);
+        reject(error);
+      }
     };
 
-    img.src = url;
+    captureFrames();
   });
 };

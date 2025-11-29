@@ -1,0 +1,23 @@
+/* Custom scrollbar for that retro feel */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #001100;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #33ff00;
+  border: 2px solid #001100;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #ccffcc;
+}
+
+/* Firefox scrollbar support */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #33ff00 #001100;
+}
