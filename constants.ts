@@ -1,4 +1,4 @@
-import { GenerationConfig, TerminalProfile } from "./types";
+import { CRTEffectConfig, GenerationConfig, TerminalProfile } from "./types";
 
 export const DEFAULT_PROFILE: TerminalProfile = {
   username: "@rin",
@@ -14,6 +14,19 @@ export const DEFAULT_CONFIG: GenerationConfig = {
   pixelSize: 5,
   gridWidth: 300,
   ditherThreshold: 128,
+};
+
+export const DEFAULT_CRT_CONFIG: CRTEffectConfig = {
+  curveIntensity: 0.04,
+  scanlineCount: 600,
+  scanlineIntensity: 0.25,
+  rgbOffset: 0.004,
+  vignetteSize: 0.5,
+  vignetteRoundness: 0.1,
+  brightnessBoost: 1.1,
+  noiseStrength: 0.03,
+  flickerIntensity: 0.03,
+  showGrid: true,
 };
 // enter by user 
 export const SYSTEM_INSTRUCTION = `You are a retro terminal profile generator.
