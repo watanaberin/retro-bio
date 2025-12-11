@@ -15,8 +15,8 @@ import {
 import { processImage } from './utils/imageUtils'
 import { generateWebGLGif } from './utils/gifUtils'
 import { RetroTerminalWebGL, RetroTerminalWebGLRef } from './components/RetroTerminalWebGL'
-import { DEFAULT_PROFILE, DEFAULT_CRT_CONFIG } from './constants'
-import { TerminalProfile, TerminalLine, CRTEffectConfig } from './types'
+import { DEFAULT_PROFILE, DEFAULT_CRT_CONFIG, DEFAULT_EXPORT_SETTINGS } from './constants'
+import { TerminalProfile, TerminalLine, CRTEffectConfig, ExportSettings } from './types'
 
 // WebGL detection helper
 const detectWebGL = (): boolean => {
@@ -37,6 +37,7 @@ const App: React.FC = () => {
   const [isGeneratingGif, setIsGeneratingGif] = useState(false)
   const [isProcessingImage, setIsProcessingImage] = useState(false)
   const [crtConfig, setCrtConfig] = useState<CRTEffectConfig>(DEFAULT_CRT_CONFIG)
+  const [exportSettings, setExportSettings] = useState<ExportSettings>(DEFAULT_EXPORT_SETTINGS)
   const [hasWebGL, setHasWebGL] = useState(true)
   const webglRef = useRef<RetroTerminalWebGLRef>(null)
 
@@ -99,6 +100,7 @@ const App: React.FC = () => {
         'retro-webgl-output',
         `retro-profile-${profile.username.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.gif`,
         webglRef.current.captureFrame,
+        exportSettings,
       )
     } catch (e: any) {
       console.error(e)
@@ -226,21 +228,19 @@ const App: React.FC = () => {
             <div className="flex border-b border-[#33ff00]/30 mb-4">
               <button
                 onClick={() => setActiveTab('list')}
-                className={`flex-1 py-2 text-xs uppercase font-bold tracking-wider flex items-center justify-center gap-2 transition-all ${
-                  activeTab === 'list'
-                    ? 'bg-[#33ff00]/20 border-b-2 border-[#33ff00] text-white'
-                    : 'opacity-60 hover:opacity-100'
-                }`}
+                className={`flex-1 py-2 text-xs uppercase font-bold tracking-wider flex items-center justify-center gap-2 transition-all ${activeTab === 'list'
+                  ? 'bg-[#33ff00]/20 border-b-2 border-[#33ff00] text-white'
+                  : 'opacity-60 hover:opacity-100'
+                  }`}
               >
                 <List className="w-3 h-3" /> Attributes
               </button>
               <button
                 onClick={() => setActiveTab('bio')}
-                className={`flex-1 py-2 text-xs uppercase font-bold tracking-wider flex items-center justify-center gap-2 transition-all ${
-                  activeTab === 'bio'
-                    ? 'bg-[#33ff00]/20 border-b-2 border-[#33ff00] text-white'
-                    : 'opacity-60 hover:opacity-100'
-                }`}
+                className={`flex-1 py-2 text-xs uppercase font-bold tracking-wider flex items-center justify-center gap-2 transition-all ${activeTab === 'bio'
+                  ? 'bg-[#33ff00]/20 border-b-2 border-[#33ff00] text-white'
+                  : 'opacity-60 hover:opacity-100'
+                  }`}
               >
                 <Type className="w-3 h-3" /> Bio / Text
               </button>
@@ -494,11 +494,10 @@ const App: React.FC = () => {
                   </label>
                   <button
                     onClick={() => setCrtConfig((prev) => ({ ...prev, showGrid: !prev.showGrid }))}
-                    className={`px-3 py-1 text-[10px] font-bold border transition-colors ${
-                      crtConfig.showGrid
-                        ? 'border-[#33ff00] bg-[#33ff00]/20 text-[#33ff00]'
-                        : 'border-[#33ff00]/30 bg-transparent text-[#33ff00]/50'
-                    }`}
+                    className={`px-3 py-1 text-[10px] font-bold border transition-colors ${crtConfig.showGrid
+                      ? 'border-[#33ff00] bg-[#33ff00]/20 text-[#33ff00]'
+                      : 'border-[#33ff00]/30 bg-transparent text-[#33ff00]/50'
+                      }`}
                   >
                     {crtConfig.showGrid ? 'ON' : 'OFF'}
                   </button>
@@ -507,14 +506,111 @@ const App: React.FC = () => {
             </div>
           </section>
 
+          {/* Export Settings */}
+          <section className="border border-[#33ff00]/30 bg-[#001100] p-6 rounded-sm shadow-[0_0_15px_rgba(51,255,0,0.1)]">
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2 uppercase tracking-wider">
+              4. Export Settings
+            </h2>
+            <div className="space-y-3">
+              {/* Resolution Scale */}
+              <div>
+                <div className="flex justify-between mb-1">
+                  <label className="text-[10px] uppercase opacity-60 tracking-widest">
+                    Resolution Scale
+                  </label>
+                  <span className="text-[10px] font-bold">
+                    {Math.round(exportSettings.scale * 100)}%
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0.25"
+                  max="1"
+                  step="0.25"
+                  value={exportSettings.scale}
+                  onChange={(e) => setExportSettings(prev => ({ ...prev, scale: parseFloat(e.target.value) }))}
+                  className="w-full h-2 bg-[#33ff00]/20 rounded-lg appearance-none cursor-pointer accent-[#33ff00]"
+                />
+                <div className="flex justify-between text-[9px] opacity-40 mt-1">
+                  <span>25%</span>
+                  <span>50%</span>
+                  <span>75%</span>
+                  <span>100%</span>
+                </div>
+              </div>
+
+              {/* FPS */}
+              <div>
+                <div className="flex justify-between mb-1">
+                  <label className="text-[10px] uppercase opacity-60 tracking-widest">
+                    Frame Rate (FPS)
+                  </label>
+                  <span className="text-[10px] font-bold">{exportSettings.fps}</span>
+                </div>
+                <input
+                  type="range"
+                  min="10"
+                  max="30"
+                  step="5"
+                  value={exportSettings.fps}
+                  onChange={(e) => setExportSettings(prev => ({ ...prev, fps: parseInt(e.target.value) }))}
+                  className="w-full h-2 bg-[#33ff00]/20 rounded-lg appearance-none cursor-pointer accent-[#33ff00]"
+                />
+                <div className="flex justify-between text-[9px] opacity-40 mt-1">
+                  <span>10</span>
+                  <span>15</span>
+                  <span>20</span>
+                  <span>25</span>
+                  <span>30</span>
+                </div>
+              </div>
+
+              {/* Duration */}
+              <div>
+                <div className="flex justify-between mb-1">
+                  <label className="text-[10px] uppercase opacity-60 tracking-widest">
+                    Duration (Seconds)
+                  </label>
+                  <span className="text-[10px] font-bold">{exportSettings.duration}s</span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="4"
+                  step="1"
+                  value={exportSettings.duration}
+                  onChange={(e) => setExportSettings(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
+                  className="w-full h-2 bg-[#33ff00]/20 rounded-lg appearance-none cursor-pointer accent-[#33ff00]"
+                />
+                <div className="flex justify-between text-[9px] opacity-40 mt-1">
+                  <span>1s</span>
+                  <span>2s</span>
+                  <span>3s</span>
+                  <span>4s</span>
+                </div>
+              </div>
+
+              {/* File Size Estimate */}
+              <div className="mt-4 pt-3 border-t border-[#33ff00]/20">
+                <div className="text-[10px] uppercase opacity-60 mb-1">Estimated Impact</div>
+                <div className="text-xs text-white">
+                  Total Frames: <span className="text-[#33ff00] font-bold">{exportSettings.fps * exportSettings.duration}</span>
+                </div>
+                <div className="text-xs text-white">
+                  Size Reduction: <span className="text-[#33ff00] font-bold">~{Math.round((1 - exportSettings.scale * exportSettings.scale) * 100)}%</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* Action Buttons */}
+
           <div className="flex flex-col gap-3">
             <button
               onClick={handleDownloadPNG}
               disabled={!hasWebGL}
-              className={`w-full border-2 border-[#33ff00] bg-[#33ff00]/5 text-[#33ff00] font-bold py-4 px-6 hover:bg-[#33ff00] hover:text-black transition-all flex items-center justify-center gap-3 uppercase tracking-wider shadow-[0_0_20px_rgba(51,255,0,0.15)] group ${
-                !hasWebGL ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              className={`w-full border-2 border-[#33ff00] bg-[#33ff00]/5 text-[#33ff00] font-bold py-4 px-6 hover:bg-[#33ff00] hover:text-black transition-all flex items-center justify-center gap-3 uppercase tracking-wider shadow-[0_0_20px_rgba(51,255,0,0.15)] group ${!hasWebGL ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
             >
               <Download className="w-6 h-6 group-hover:animate-bounce" /> Export Image (.PNG)
             </button>
@@ -522,9 +618,8 @@ const App: React.FC = () => {
             <button
               onClick={handleDownloadGif}
               disabled={isGeneratingGif || !hasWebGL}
-              className={`w-full border-2 border-[#33ff00]/50 bg-black text-[#33ff00]/80 font-bold py-3 px-6 hover:bg-[#33ff00]/10 hover:text-[#33ff00] hover:border-[#33ff00] transition-all flex items-center justify-center gap-3 uppercase tracking-wider ${
-                isGeneratingGif || !hasWebGL ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              className={`w-full border-2 border-[#33ff00]/50 bg-black text-[#33ff00]/80 font-bold py-3 px-6 hover:bg-[#33ff00]/10 hover:text-[#33ff00] hover:border-[#33ff00] transition-all flex items-center justify-center gap-3 uppercase tracking-wider ${isGeneratingGif || !hasWebGL ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
             >
               {isGeneratingGif ? (
                 <>

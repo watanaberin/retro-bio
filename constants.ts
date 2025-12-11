@@ -1,4 +1,4 @@
-import { CRTEffectConfig, GenerationConfig, TerminalProfile } from "./types";
+import { CRTEffectConfig, ExportSettings, GenerationConfig, TerminalProfile } from "./types";
 
 export const DEFAULT_PROFILE: TerminalProfile = {
   username: "@rin",
@@ -28,6 +28,13 @@ export const DEFAULT_CRT_CONFIG: CRTEffectConfig = {
   flickerIntensity: 0.03,
   showGrid: true,
 };
+
+export const DEFAULT_EXPORT_SETTINGS: ExportSettings = {
+  scale: 0.25,     // 25% resolution for optimal file size
+  fps: 10,         // Balanced frame rate for retro feel
+  duration: 2,     // 2 seconds total
+};
+
 // enter by user 
 export const SYSTEM_INSTRUCTION = `You are a retro terminal profile generator.
 Extract user information from the input text into a JSON object.

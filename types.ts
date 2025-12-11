@@ -27,3 +27,9 @@ export interface CRTEffectConfig {
   flickerIntensity: number;     // 0.0 - 0.2, default: 0.03
   showGrid: boolean;            // default: true
 }
+
+export interface ExportSettings {
+  scale: number;        // 0.25, 0.5, 0.75, 1.0 - resolution scale factor
+  fps: number;          // 10, 15, 20, 30 - frames per second
+  duration: number;     // 1, 2, 3, 4 - duration in seconds
+}
